@@ -15,11 +15,35 @@ dotenv.config();
 const app = express();
 
 // Middleware
+// CORS configuration - allow frontend origin
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://health-mate-website.vercel.app',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : process.env.FRONTEND_URL || '*',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list or if it's a Vercel preview URL
+    if (allowedOrigins.includes(origin) || 
+        origin.includes('health-mate-website') ||
+        origin.includes('vercel.app')) {
+      callback(null, true);
+    } else {
+      // For development, allow all
+      if (process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow for now, can restrict later
+      }
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 app.use(express.json());
 
